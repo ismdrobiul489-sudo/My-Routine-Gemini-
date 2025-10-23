@@ -1,22 +1,23 @@
-const CACHE_NAME = 'my-routine-cache-v2';
+const CACHE_NAME = 'my-routine-cache-v3';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/index.tsx',
-  '/App.tsx',
-  '/types.ts',
-  '/constants.ts',
-  '/components/Header.tsx',
-  '/components/DaySelector.tsx',
-  '/components/RoutineTable.tsx',
-  '/components/DopamineChecklist.tsx',
-  '/components/SideMenu.tsx',
-  '/components/ReflectionModal.tsx',
-  '/components/TimePicker.tsx',
+  './',
+  './index.html',
+  './manifest.json',
+  './index.tsx',
+  './App.tsx',
+  './types.ts',
+  './constants.ts',
+  './components/Header.tsx',
+  './components/DaySelector.tsx',
+  './components/RoutineTable.tsx',
+  './components/DopamineChecklist.tsx',
+  './components/SideMenu.tsx',
+  './components/ReflectionModal.tsx',
+  './components/TimePicker.tsx',
+  './components/BottomNav.tsx',
   // You will need to create these icon files in an /icons/ directory
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png'
 ];
 
 self.addEventListener('install', event => {

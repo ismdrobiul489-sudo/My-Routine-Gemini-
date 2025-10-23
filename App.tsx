@@ -35,37 +35,60 @@ const App: React.FC = () => {
     // Set current day on initial load
     setCurrentDay(todayDay);
 
-    // Load routines from local storage
-    const savedRoutines = localStorage.getItem('routines');
-    if (savedRoutines) {
-      setRoutines(JSON.parse(savedRoutines));
+    // Load routines safely from local storage
+    try {
+      const savedRoutines = localStorage.getItem('routines');
+      if (savedRoutines) {
+        setRoutines(JSON.parse(savedRoutines));
+      }
+    } catch (error) {
+      console.error('Failed to parse routines from localStorage:', error);
+      localStorage.removeItem('routines'); // Clear corrupted data
     }
 
     const todayKey = getTodayKey();
 
-    // Load checklist and reflection from local storage for the current day
-    const savedChecklist = localStorage.getItem(`checklist-${todayKey}`);
-    const savedGlobalChecklist = localStorage.getItem('checklist-global');
+    // Load checklist and reflection safely from local storage for the current day
+    try {
+      const savedChecklist = localStorage.getItem(`checklist-${todayKey}`);
+      const savedGlobalChecklist = localStorage.getItem('checklist-global');
 
-    if (savedChecklist) {
-      setChecklist(JSON.parse(savedChecklist));
-    } else if (savedGlobalChecklist) {
-       const globalChecklist = JSON.parse(savedGlobalChecklist);
-       setChecklist(
-        globalChecklist.map((item: ChecklistItem) => ({
-          ...item,
-          checked: false,
-          score: 1,
-        }))
-      );
-    } else {
-      setChecklist(
-        INITIAL_CHECKLIST_ITEMS.map((item) => ({
-          ...item,
-          checked: false,
-          score: 1,
-        }))
-      );
+      if (savedChecklist) {
+        setChecklist(JSON.parse(savedChecklist));
+      } else if (savedGlobalChecklist) {
+         const globalChecklist = JSON.parse(savedGlobalChecklist);
+         if (Array.isArray(globalChecklist)) {
+            setChecklist(
+              globalChecklist.map((item: any) => ({ // Use 'any' for robustness
+                ...item,
+                checked: false,
+                score: 1,
+              }))
+            );
+         } else {
+            throw new Error('Global checklist from storage is not an array.');
+         }
+      } else {
+        setChecklist(
+          INITIAL_CHECKLIST_ITEMS.map((item) => ({
+            ...item,
+            checked: false,
+            score: 1,
+          }))
+        );
+      }
+    } catch (error) {
+        console.error('Failed to parse checklist from localStorage:', error);
+        // Fallback to initial state if parsing fails
+        setChecklist(
+          INITIAL_CHECKLIST_ITEMS.map((item) => ({
+            ...item,
+            checked: false,
+            score: 1,
+          }))
+        );
+        localStorage.removeItem(`checklist-${todayKey}`);
+        localStorage.removeItem('checklist-global');
     }
     
     const savedReflection = localStorage.getItem(`reflection-${todayKey}`);
