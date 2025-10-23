@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import type { DayOfWeek, Routines, ChecklistItem, Theme, RoutineItem, ActiveView } from './types';
 import { INITIAL_ROUTINES, INITIAL_CHECKLIST_ITEMS, DAY_ORDER } from './constants';
@@ -35,62 +34,116 @@ const App: React.FC = () => {
     // Set current day on initial load
     setCurrentDay(todayDay);
 
-    // Load routines safely from local storage
+    // --- Load Routines ---
+    let finalRoutines: Routines = INITIAL_ROUTINES;
     try {
       const savedRoutines = localStorage.getItem('routines');
       if (savedRoutines) {
-        setRoutines(JSON.parse(savedRoutines));
+        const parsedRoutines = JSON.parse(savedRoutines);
+        
+        // More robust validation
+        const isValid = 
+          typeof parsedRoutines === 'object' &&
+          parsedRoutines !== null &&
+          !Array.isArray(parsedRoutines) &&
+          DAY_ORDER.every(day => 
+            Array.isArray(parsedRoutines[day]) &&
+            parsedRoutines[day].every((item: any) => 
+              typeof item === 'object' &&
+              item !== null &&
+              'time' in item && typeof item.time === 'string' &&
+              'activity' in item && typeof item.activity === 'string'
+            )
+          );
+
+        if (isValid) {
+          finalRoutines = parsedRoutines;
+        } else {
+          console.warn('Invalid or malformed routines structure in localStorage. Resetting to default.');
+          localStorage.removeItem('routines');
+        }
       }
     } catch (error) {
-      console.error('Failed to parse routines from localStorage:', error);
+      console.error('Failed to parse routines from localStorage. Resetting to default.', error);
       localStorage.removeItem('routines'); // Clear corrupted data
     }
+    setRoutines(finalRoutines);
 
+
+    // --- Load Checklist ---
     const todayKey = getTodayKey();
-
-    // Load checklist and reflection safely from local storage for the current day
+    let finalChecklist: ChecklistItem[] | null = null;
+    
+    // 1. Try today's specific checklist
     try {
       const savedChecklist = localStorage.getItem(`checklist-${todayKey}`);
-      const savedGlobalChecklist = localStorage.getItem('checklist-global');
-
       if (savedChecklist) {
-        setChecklist(JSON.parse(savedChecklist));
-      } else if (savedGlobalChecklist) {
-         const globalChecklist = JSON.parse(savedGlobalChecklist);
-         if (Array.isArray(globalChecklist)) {
-            setChecklist(
-              globalChecklist.map((item: any) => ({ // Use 'any' for robustness
-                ...item,
-                checked: false,
-                score: 1,
-              }))
-            );
-         } else {
-            throw new Error('Global checklist from storage is not an array.');
-         }
-      } else {
-        setChecklist(
-          INITIAL_CHECKLIST_ITEMS.map((item) => ({
-            ...item,
-            checked: false,
-            score: 1,
-          }))
-        );
+        const parsedChecklist = JSON.parse(savedChecklist);
+        
+        // More robust validation
+        const isValid = 
+          Array.isArray(parsedChecklist) && 
+          parsedChecklist.every((item: any) => 
+            typeof item === 'object' && 
+            item !== null && 
+            'id' in item && typeof item.id === 'string' &&
+            'task' in item && typeof item.task === 'string' &&
+            'checked' in item && typeof item.checked === 'boolean' &&
+            'score' in item && typeof item.score === 'number'
+          );
+
+        if (isValid) {
+          finalChecklist = parsedChecklist;
+        } else {
+          console.warn('Invalid or malformed daily checklist structure in localStorage. Removing.');
+          localStorage.removeItem(`checklist-${todayKey}`);
+        }
       }
     } catch (error) {
-        console.error('Failed to parse checklist from localStorage:', error);
-        // Fallback to initial state if parsing fails
-        setChecklist(
-          INITIAL_CHECKLIST_ITEMS.map((item) => ({
-            ...item,
-            checked: false,
-            score: 1,
-          }))
-        );
-        localStorage.removeItem(`checklist-${todayKey}`);
+      console.error(`Failed to parse checklist-${todayKey}. Removing.`, error);
+      localStorage.removeItem(`checklist-${todayKey}`);
+    }
+
+    // 2. If not loaded, try the global template
+    if (!finalChecklist) {
+      try {
+        const savedGlobalChecklist = localStorage.getItem('checklist-global');
+        if (savedGlobalChecklist) {
+          const globalChecklist = JSON.parse(savedGlobalChecklist);
+          
+          // More robust validation for the template
+          const isValid = 
+            Array.isArray(globalChecklist) && 
+            globalChecklist.every((item: any) =>
+              typeof item === 'object' && item !== null && 'id' in item && typeof item.id === 'string' && 'task' in item && typeof item.task === 'string'
+            );
+
+          if (isValid) {
+            finalChecklist = globalChecklist.map((item: any) => ({
+              id: item.id,
+              task: item.task,
+              checked: false, // Always reset for the new day
+              score: 1,       // Always reset for the new day
+            }));
+          } else {
+            console.warn('Invalid or malformed global checklist structure in localStorage. Removing.');
+            localStorage.removeItem('checklist-global');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to parse checklist-global. Removing.', error);
         localStorage.removeItem('checklist-global');
+      }
     }
     
+    // 3. Final fallback to initial constants if nothing loaded
+    if (!finalChecklist) {
+        finalChecklist = INITIAL_CHECKLIST_ITEMS.map(item => ({...item, checked: false, score: 1}));
+    }
+
+    setChecklist(finalChecklist);
+    
+    // --- Load Reflection ---
     const savedReflection = localStorage.getItem(`reflection-${todayKey}`);
     if(savedReflection) {
       setReflection(savedReflection);
