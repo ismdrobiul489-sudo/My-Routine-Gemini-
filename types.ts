@@ -16,3 +16,5 @@ export interface ChecklistItem {
 }
 
 export type Theme = 'light' | 'dark';
+
+export type ActiveView = 'today' | 'routine' | 'checklist';

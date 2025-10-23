@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import type { DayOfWeek, Routines, ChecklistItem, Theme, RoutineItem } from './types';
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import type { DayOfWeek, Routines, ChecklistItem, Theme, RoutineItem, ActiveView } from './types';
 import { INITIAL_ROUTINES, INITIAL_CHECKLIST_ITEMS, DAY_ORDER } from './constants';
 import Header from './components/Header';
 import DaySelector from './components/DaySelector';
@@ -7,6 +8,7 @@ import RoutineTable from './components/RoutineTable';
 import DopamineChecklist from './components/DopamineChecklist';
 import SideMenu from './components/SideMenu';
 import ReflectionModal from './components/ReflectionModal';
+import BottomNav from './components/BottomNav';
 
 const App: React.FC = () => {
   const [currentDay, setCurrentDay] = useState<DayOfWeek>('saturday');
@@ -17,8 +19,11 @@ const App: React.FC = () => {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isReflectionOpen, setIsReflectionOpen] = useState(false);
   const [reflection, setReflection] = useState('');
+  const [activeView, setActiveView] = useState<ActiveView>('today');
 
   const getTodayKey = () => new Date().toISOString().slice(0, 10);
+  
+  const todayDay = useMemo(() => DAY_ORDER[new Date().getDay()], []);
 
   useEffect(() => {
     // Set theme from local storage or system preference
@@ -28,9 +33,7 @@ const App: React.FC = () => {
     setTheme(initialTheme);
 
     // Set current day on initial load
-    const todayIndex = new Date().getDay();
-    const today: DayOfWeek = DAY_ORDER[todayIndex];
-    setCurrentDay(today);
+    setCurrentDay(todayDay);
 
     // Load routines from local storage
     const savedRoutines = localStorage.getItem('routines');
@@ -69,8 +72,7 @@ const App: React.FC = () => {
     if(savedReflection) {
       setReflection(savedReflection);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [todayDay]);
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -197,7 +199,7 @@ const App: React.FC = () => {
     });
   }, []);
 
-  const isViewingToday = currentDay === DAY_ORDER[new Date().getDay()];
+  const isViewingToday = currentDay === todayDay;
 
   return (
     <div className={`relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden ${isFocusMode ? 'focus-mode' : ''}`}>
@@ -231,25 +233,60 @@ const App: React.FC = () => {
         initialText={reflection}
       />
 
-      {!isFocusMode && <Header onMenuClick={() => setIsMenuOpen(true)} />}
-      <div className="day-selector-container">
-        <DaySelector currentDay={currentDay} onDayChange={setCurrentDay} />
-      </div>
+      {!isFocusMode && <Header onMenuClick={() => setIsMenuOpen(true)} activeView={activeView} />}
 
-      <main className="px-4 space-y-2 pb-24 pt-6 flex-grow">
-        <div className="routine-table-container">
-          <RoutineTable
-            day={currentDay}
-            routine={routines[currentDay]}
-            onTimeChange={handleTimeChange}
-            onActivityChange={handleActivityChange}
-            onAddItem={handleAddItem}
-            onDeleteItem={handleDeleteItem}
-            onReorderItems={handleReorderItems}
-            isToday={isViewingToday}
-          />
-        </div>
-        {!isFocusMode && (
+      <main className="px-4 space-y-4 pb-24 pt-6 flex-grow">
+        {activeView === 'routine' && !isFocusMode && (
+          <div className="day-selector-container">
+            <DaySelector currentDay={currentDay} onDayChange={setCurrentDay} />
+          </div>
+        )}
+
+        {activeView === 'today' && (
+          <>
+            <div className="routine-table-container">
+              <RoutineTable
+                day={todayDay}
+                routine={routines[todayDay]}
+                onTimeChange={handleTimeChange}
+                onActivityChange={handleActivityChange}
+                onAddItem={handleAddItem}
+                onDeleteItem={handleDeleteItem}
+                onReorderItems={handleReorderItems}
+                isToday={true}
+              />
+            </div>
+            {!isFocusMode && (
+              <div className="dopamine-checklist-container">
+                <DopamineChecklist
+                  checklist={checklist}
+                  onChecklistChange={handleChecklistChange}
+                  onScoreChange={handleScoreChange}
+                  onTaskChange={handleChecklistTaskChange}
+                  onAddItem={handleAddChecklistItem}
+                  onDeleteItem={handleDeleteChecklistItem}
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        {activeView === 'routine' && (
+           <div className="routine-table-container">
+            <RoutineTable
+              day={currentDay}
+              routine={routines[currentDay]}
+              onTimeChange={handleTimeChange}
+              onActivityChange={handleActivityChange}
+              onAddItem={handleAddItem}
+              onDeleteItem={handleDeleteItem}
+              onReorderItems={handleReorderItems}
+              isToday={isViewingToday}
+            />
+          </div>
+        )}
+        
+        {activeView === 'checklist' && !isFocusMode && (
           <div className="dopamine-checklist-container">
             <DopamineChecklist
               checklist={checklist}
@@ -262,6 +299,8 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
+      
+      {!isFocusMode && <BottomNav activeView={activeView} onNavigate={setActiveView} />}
     </div>
   );
 };

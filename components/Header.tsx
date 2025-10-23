@@ -1,10 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
+import type { ActiveView } from '../types';
 
 interface HeaderProps {
   onMenuClick: () => void;
+  activeView: ActiveView;
 }
 
-const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+const Header: React.FC<HeaderProps> = ({ onMenuClick, activeView }) => {
   const [currentDate, setCurrentDate] = useState('');
 
   useEffect(() => {
@@ -26,6 +29,18 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     return () => clearInterval(intervalId);
   }, []);
 
+  const getTitle = () => {
+    switch (activeView) {
+      case 'routine':
+        return 'সাপ্তাহিক রুটিন';
+      case 'checklist':
+        return 'ডোপামিন চেকলিস্ট';
+      case 'today':
+      default:
+        return currentDate;
+    }
+  };
+
   return (
     <header className="bg-background-light dark:bg-background-dark sticky top-0 z-10 shadow-sm">
       <div className="flex items-center p-4 pb-2 justify-between">
@@ -39,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </button>
         </div>
         <h1 className="text-header-text text-lg sm:text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center">
-          {currentDate}
+          {getTitle()}
         </h1>
         <div className="flex w-12 items-center justify-end">
           <button className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 bg-transparent text-header-text gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
