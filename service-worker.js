@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-routine-cache-v3';
+const CACHE_NAME = 'my-routine-cache-v4';
 const urlsToCache = [
   './',
   './index.html',
@@ -14,10 +14,7 @@ const urlsToCache = [
   './components/SideMenu.tsx',
   './components/ReflectionModal.tsx',
   './components/TimePicker.tsx',
-  './components/BottomNav.tsx',
-  // You will need to create these icon files in an /icons/ directory
-  './icons/icon-192x192.png',
-  './icons/icon-512x512.png'
+  './components/BottomNav.tsx'
 ];
 
 self.addEventListener('install', event => {
