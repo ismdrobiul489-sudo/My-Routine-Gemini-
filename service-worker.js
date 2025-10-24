@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-routine-cache-v4';
+const CACHE_NAME = 'my-routine-cache-v5';
 const urlsToCache = [
   './',
   './index.html',
@@ -14,7 +14,9 @@ const urlsToCache = [
   './components/SideMenu.tsx',
   './components/ReflectionModal.tsx',
   './components/TimePicker.tsx',
-  './components/BottomNav.tsx'
+  './components/BottomNav.tsx',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
 ];
 
 self.addEventListener('install', event => {

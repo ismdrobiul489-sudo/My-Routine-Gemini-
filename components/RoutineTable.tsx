@@ -213,10 +213,11 @@ const RoutineTable: React.FC<RoutineTableProps> = ({
                     <td className="border-x px-1 sm:px-2 py-2 text-center align-middle">
                       <button 
                         onClick={() => handleDelete(index)}
+                        onMouseDown={(e) => e.stopPropagation()}
                         className="p-2 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
                         aria-label="Delete item"
                       >
-                        <span className="material-symbols-outlined">delete</span>
+                        <span className="material-symbols-outlined text-base">delete</span>
                       </button>
                     </td>
                   )}
